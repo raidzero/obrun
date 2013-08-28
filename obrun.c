@@ -178,6 +178,10 @@ int main(void)
 
 	// before anything else, has this comand already been recorded?
 	int already_present = in_file(histFile, orig_str, 0); 
+	if (already_present)
+	{
+		goto END;
+	}
 	
 	// now lets check our error file for a bash error "command not found"
 	char not_found_str[256];
@@ -203,7 +207,8 @@ int main(void)
 		fprintf(logFp, "%s\n", orig_str);
 		fclose(logFp);		
 	}
-
+	
+	END:
 	g_free(orig_str);
 	g_free(exec_str);
 
