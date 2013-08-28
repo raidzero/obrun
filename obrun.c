@@ -178,39 +178,35 @@ int main(void)
 
 	// before anything else, has this comand already been recorded?
 	int already_present = in_file(histFile, orig_str, 0); 
-	if (already_present)
+	if (!already_present)
 	{
-		goto END;
-	}
-	
-	// now lets check our error file for a bash error "command not found"
-	char not_found_str[256];
-	sprintf(not_found_str, "sh: %s: command not found", orig_str);
-	int not_found = in_file("/tmp/err", not_found_str, 1);
-	
-	#if DEBUG
-		printf("already_present: %d\n", already_present);
-		printf("not_found: %d\n", not_found);
-	#endif
-
-	if (result == 0 && !already_present && !not_found)
-	{
-		FILE* logFp = fopen(histFile, "a");
-		if (logFp == NULL)
-		{
-			logFp = fopen(histFile, "w");
-		}	
-
+		// now lets check our error file for a bash error "command not found"
+		char not_found_str[256];
+		sprintf(not_found_str, "sh: %s: command not found", orig_str);
+		int not_found = in_file("/tmp/err", not_found_str, 1);
+		
 		#if DEBUG
-			printf("Adding %s to historyFile...\n", orig_str);
+			printf("already_present: %d\n", already_present);
+			printf("not_found: %d\n", not_found);
 		#endif
-		fprintf(logFp, "%s\n", orig_str);
-		fclose(logFp);		
-	}
-	
-	END:
-	g_free(orig_str);
-	g_free(exec_str);
 
+		if (result == 0 && !already_present && !not_found)
+		{
+			FILE* logFp = fopen(histFile, "a");
+			if (logFp == NULL)
+			{
+				logFp = fopen(histFile, "w");
+			}	
+
+			#if DEBUG
+				printf("Adding %s to historyFile...\n", orig_str);
+			#endif
+			fprintf(logFp, "%s\n", orig_str);
+			fclose(logFp);		
+		}
+		
+		g_free(orig_str);
+		g_free(exec_str);
+	}
 	return 0;
 }
