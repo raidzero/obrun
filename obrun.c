@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include <pthread.h>
+#include <unistd.h>
 
 #define DEBUG 0
 
@@ -42,12 +42,37 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer dat
   return FALSE;
 }
 
-static int in_file(char* filename, char* s)
+static int in_file(char* filename, char* s, int must_exist)
 {
+	#if DEBUG
+		printf("in_file(\"%s\", \"%s\") called\n", filename, s);
+	#endif
 	char line[256];
 	int present = 1;
 	FILE* fp = fopen(filename, "r");
+	
+	if (must_exist) // dont accept a null file pointer, just keep trying
+	{
+		#if DEBUG
+			printf("File must exist.\n");
+		#endif
+		while (fp == NULL)
+		{
+			#if DEBUG
+				printf("waiting for file to show up...\n");
+			#endif
 
+			fp = fopen(filename, "r");
+		}
+		#if DEBUG
+			printf("File exists! yay!\n");
+		#endif
+		/* wait a small amount of time because bash's redirection is slow compared to us
+		 * 2500 microsecs is instant on my system, since this is for me it'll do
+		 */
+		 usleep(2500); 
+	}
+	
 	if (fp != NULL)
 	{
 		rewind(fp); // start from beginning
@@ -57,18 +82,21 @@ static int in_file(char* filename, char* s)
 			line[strlen(line)-1] = '\0'; // kill newline
 			present = strcmp(line, s);
 			#if DEBUG == 1
-				printf("Checking %s for %s: %d\n", line, s, present);
+				printf("Checking LINE (%s) for MATCH (%s): %d\n", line, s, present);
 			#endif
 			if (present == 0) break;
 		}
-		fclose(fp);
 	}
+	fclose(fp);
 	
 	return (present == 0);
 }
 
 int main(void) 
 {
+	// wipe away any previous err file
+	unlink("/tmp/err");
+	
 	char histFile[256];
 	sprintf(histFile, "/home/%s/.obrun_history", getenv("USER"));	
 	
@@ -136,8 +164,8 @@ int main(void)
 	gtk_widget_show_all(window);
 	gtk_main();
 
-	gchar *orig_str = g_strdup_printf("%s", gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry)));
-	gchar *exec_str = g_strdup_printf("%s&", gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry)));
+	gchar *orig_str = g_strdup(gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry)));
+	gchar *exec_str = g_strdup_printf("%s 2> /tmp/err &", gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry)));
 
 	
 	if (strcmp(orig_str, "(null)") == 0 || strcmp(orig_str, "") == 0) // user didnt enter anything
@@ -145,14 +173,23 @@ int main(void)
 		return 0;
 	}
 	
+
 	int result = system(exec_str);
+
+	// before anything else, has this comand already been recorded?
+	int already_present = in_file(histFile, orig_str, 0); 
 	
-	int already_present = in_file(histFile, orig_str); // have we already recorded this?
+	// now lets check our error file for a bash error "command not found"
+	char not_found_str[256];
+	sprintf(not_found_str, "sh: %s: command not found", orig_str);
+	int not_found = in_file("/tmp/err", not_found_str, 1);
 	
 	#if DEBUG
 		printf("already_present: %d\n", already_present);
+		printf("not_found: %d\n", not_found);
 	#endif
-	if (result == 0 && !already_present)
+
+	if (result == 0 && !already_present && !not_found)
 	{
 		FILE* logFp = fopen(histFile, "a");
 		if (logFp == NULL)
