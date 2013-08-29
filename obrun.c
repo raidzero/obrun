@@ -15,7 +15,7 @@
 
 #include "path.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 // returns true if esc is pressed
 static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer data)
@@ -35,18 +35,25 @@ static void check_tab(GtkComboBox *combo, GdkEventKey *event, gpointer data)
 	if (event->keyval == GDK_KEY_Tab) 
 	{
 		printf("TAB pressed!\n");
+
 		// get text from box
 		const gchar* entry_box = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
+		g_printf("entry: %s\n", entry_box);
 		
+		// pull the PATH
+		const gchar* path = (gchar*) getenv("PATH");
+		g_printf("path: %s\n", path);
+
 		// see what the shortest PATH match is
-		gchar* match = get_path_match(entry_box);
+		gchar* match = get_path_match(entry_box, g_strdup(path)); // send a copy of path since it gets mangeld
 		
 		// print the match
 		g_print("%s\n", match);
 		gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), match);
+		g_free(match);
 	}
 }
-
+// returns 0 or 1 if a line is in a file
 static int in_file(char* filename, char* s, int must_exist)
 {
 	#if DEBUG

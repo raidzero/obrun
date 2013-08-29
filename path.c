@@ -13,10 +13,8 @@
 
 #define DEBUG 0
 
-gchar* get_path_match(const gchar* cmd)
+gchar* get_path_match(const gchar* cmd, const gchar* path)
 {
-	char* path = getenv("PATH");
-
 	#if DEBUG
 		printf("Checking PATH (%s) for cmd (%s)...\n", path, cmd);
 	#endif
@@ -111,11 +109,22 @@ gchar* get_path_match(const gchar* cmd)
 			#endif
 		}
 	}
-	
+
 	// return the shortest match
 	return matches->data;
 }
 
+// will free a char**
+void free_string_array(char** array, int size)
+{
+	int i;
+	for(i=0; i<size; i++)
+	{
+		free(array[i]);
+	}
+	// now free the main thing
+	free(array);
+}
 // used for glist sorting
 gint compar (gpointer a, gpointer b)
 {
@@ -177,7 +186,7 @@ char* replace_home(char* s)
 }
 
 // returns number of characters in string
-int count_chars(char c, char* s)
+int count_chars(char c, const char* s)
 {
 	int sLen = strlen(s);
 	int i = 0; int count = 0;
@@ -189,7 +198,8 @@ int count_chars(char c, char* s)
 		
 	#if DEBUG
 		printf("Found %d %c's in %s\n", count, c, s);
-	#endif	
+	#endif
+	if (count == 0) count++;
 	return count;
 }
 
@@ -233,13 +243,13 @@ int in_array(char** haystack, char* needle, int count)
 }
 
 // returns an array of char*, splits string by delimiter
-char** split_str(char* s, char* delim, int count)
+char** split_str(const char* s, char* delim, int count)
 {
 	char** result = malloc(sizeof(char*) * (count + 1));
 	char* pch;
 	int i = 0;
 	int already_present;
-	pch = strtok(s, delim);
+	pch = strtok((char*) s, delim);
 	while (pch != NULL)
 	{
 		already_present = in_array(result, pch, i);
