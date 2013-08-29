@@ -109,9 +109,17 @@ gchar* get_path_match(const gchar* cmd, const gchar* path)
 			#endif
 		}
 	}
-
-	// return the shortest match
-	return matches->data;
+	
+	if (g_list_length(matches) == 0)
+	{
+		printf("No matches\n");
+		return NULL;
+	}
+	else
+	{
+		// return the shortest match
+		return matches->data;
+	}
 }
 
 // will free a char**
