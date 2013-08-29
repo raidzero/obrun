@@ -6,18 +6,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <glib.h>
+#include <glib/gprintf.h>
+
+#include "path.h"
+
 #define DEBUG 0
 
-// helpers
-int count_chars(char, char*);
-char** split_str(char*, char*, int);
-char* replace_home(char*);
-int str_startswith(char*, char*);
-int in_array(char**, char*, int);
-
-int main(int argc, char* argv[])
+gchar* get_path_match(gchar* cmd)
 {
-	char* cmd = argv[1];
 	char* path = getenv("PATH");
 
 	#if DEBUG
@@ -29,6 +26,9 @@ int main(int argc, char* argv[])
 	#if DEBUG
 		printf("Searching PATH for cmd (%s):\n", cmd);	
 	#endif
+
+	// where matches go
+	GList* matches = NULL;
 
 	// iterate over the path directories
 	int i = 0;
@@ -90,7 +90,11 @@ int main(int argc, char* argv[])
 						#endif
 						if (S_ISREG(sb.st_mode) && sb.st_mode & 0111)
 						{
-							printf("%s ", ent->d_name);
+							//printf("%s ", ent->d_name);
+
+							// add to glist
+							gchar* match = g_strdup(ent->d_name);
+							matches = g_list_insert_sorted(matches, match, compar);
 						}
 					}
 				}
@@ -107,10 +111,16 @@ int main(int argc, char* argv[])
 			#endif
 		}
 	}
-
-	return 0;
+	
+	// return the shortest match
+	return matches->data;
 }
 
+// used for glist sorting
+gint compar (gpointer a, gpointer b)
+{
+	return strcmp( (char*)a, (char*)b );
+}
 // returns 0 or 1 if string starts with another
 int str_startswith(char* s, char* st)
 {
@@ -146,7 +156,7 @@ char* replace_home(char* s)
 
 	int i = 2; // in s
 	int j = 0; // in new
-	for (i; i<strlen(s)+2; i++)
+	for (i = 2; i<strlen(s)+2; i++)
 	{
 		/*
 		#if DEBUG

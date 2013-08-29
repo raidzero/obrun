@@ -1,20 +1,3 @@
-/*
-	Copyright (C) 2012-2013  DolphinCommode
-
-	This is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	obrun is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,16 +13,39 @@
 
 #include <unistd.h>
 
+#include "path.h"
+
 #define DEBUG 0
 
 // returns true if esc is pressed
 static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
-  if (event->keyval == GDK_KEY_Escape) {
-    gtk_main_quit();
-    return TRUE;
-  }
-  return FALSE;
+	if (event->keyval == GDK_KEY_Escape) 
+	{
+		gtk_main_quit();
+		printf("ESC pressed!\n");
+		return TRUE;
+	}
+	return FALSE;
+}
+
+// puts the shortest match in the PATH in text entry box if tab is pressed
+static void check_tab(GtkComboBox *combo, GdkEventKey *event, gpointer data)
+{
+	printf("check_tab called\n");
+	if (event->keyval == GDK_KEY_Tab) 
+	{
+		printf("TAB pressed!\n");
+		// get text from box
+		gchar* entry_box = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
+		
+		// see what the shortest PATH match is
+		gchar* match = get_path_match(entry_box);
+		
+		// print the match
+		g_print("%s\n", match);
+		gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), match);
+	}
 }
 
 static int in_file(char* filename, char* s, int must_exist)
@@ -156,10 +162,18 @@ int main(void)
 
 	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	gtk_widget_set_size_request(GTK_COMBO(combo)->entry, 200, 20);
+	
+	// listen for X button
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL); 
+	
+	// listen for esc
+	g_signal_connect(window, "key_press_event", G_CALLBACK(check_escape), NULL); 
 
-	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL); // listen for X button
-	g_signal_connect(window, "key_press_event", G_CALLBACK(check_escape), NULL); // listen for esc
-	g_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", G_CALLBACK(gtk_main_quit), NULL); // listen for dropdown changes
+	// listen for tab
+	g_signal_connect(combo, "key_press_event", G_CALLBACK(check_tab), NULL); 
+	
+	// listen for dropdown changes
+	g_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", G_CALLBACK(gtk_main_quit), NULL); 
 
 	gtk_widget_show_all(window);
 	gtk_main();
