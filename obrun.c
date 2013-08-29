@@ -32,12 +32,11 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer dat
 // puts the shortest match in the PATH in text entry box if tab is pressed
 static void check_tab(GtkComboBox *combo, GdkEventKey *event, gpointer data)
 {
-	printf("check_tab called\n");
 	if (event->keyval == GDK_KEY_Tab) 
 	{
 		printf("TAB pressed!\n");
 		// get text from box
-		gchar* entry_box = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
+		const gchar* entry_box = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
 		
 		// see what the shortest PATH match is
 		gchar* match = get_path_match(entry_box);
@@ -187,6 +186,8 @@ int main(void)
 		return 0;
 	}
 	
+	
+	g_printf("Executing %s...\n", exec_str);
 
 	int result = system(exec_str);
 

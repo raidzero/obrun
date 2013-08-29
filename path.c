@@ -13,7 +13,7 @@
 
 #define DEBUG 0
 
-gchar* get_path_match(gchar* cmd)
+gchar* get_path_match(const gchar* cmd)
 {
 	char* path = getenv("PATH");
 
@@ -94,7 +94,7 @@ gchar* get_path_match(gchar* cmd)
 
 							// add to glist
 							gchar* match = g_strdup(ent->d_name);
-							matches = g_list_insert_sorted(matches, match, compar);
+							matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar);
 						}
 					}
 				}
@@ -122,7 +122,7 @@ gint compar (gpointer a, gpointer b)
 	return strcmp( (char*)a, (char*)b );
 }
 // returns 0 or 1 if string starts with another
-int str_startswith(char* s, char* st)
+int str_startswith(char* s, const char* st)
 {
 	#if DEBUG
 		printf("str_startswith(\"%s\", \"%s\") called\n", s, st);
