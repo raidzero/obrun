@@ -1,4 +1,4 @@
-gchar* get_path_match(const gchar*, const gchar*);
+GList* get_path_matches(const gchar*, const gchar*);
 int count_chars(char, const char*);
 char** split_str(const char*, char*, int);
 char* replace_home(char*);

@@ -13,7 +13,7 @@
 
 #define DEBUG 0
 
-gchar* get_path_match(const gchar* cmd, const gchar* path)
+GList* get_path_matches(const gchar* cmd, const gchar* path)
 {
 	#if DEBUG
 		printf("Checking PATH (%s) for cmd (%s)...\n", path, cmd);
@@ -110,15 +110,17 @@ gchar* get_path_match(const gchar* cmd, const gchar* path)
 		}
 	}
 	
-	if (g_list_length(matches) == 0)
+	int numMatches = g_list_length(matches);
+	if ( numMatches == 0)
 	{
-		printf("No matches\n");
+		printf("No matches for %s\n", cmd);
 		return NULL;
 	}
 	else
 	{
-		// return the shortest match
-		return g_list_first(matches)->data;
+		// return the list, let the caller figure out what to do with it
+		printf("Returning %d matches for %s.\n", numMatches, cmd);
+		return matches;
 	}
 }
 

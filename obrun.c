@@ -17,6 +17,13 @@
 
 #define DEBUG 0
 
+// globals
+GtkWidget* window; // the main window
+GtkWidget* combo; // the entry area
+GList* matches; // possible auto complete matches
+gchar* old_entry = ""; // what was entered before
+int current_match_index = 0; // the match index we are currently on
+
 // quits the program after destroying any given widgets
 void die()
 {
@@ -24,55 +31,61 @@ void die()
 	exit(0);
 }
 
-// returns true if esc is pressed
-static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer data)
+// performs actions for escape (quit), or any other key look up possible matches
+static gboolean check_keys(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
-	if (event->keyval == GDK_KEY_Escape) 
+	const gchar* entry = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
+	const gchar* path = (gchar*) getenv("PATH");
+	int numMatches = g_list_length(matches);
+	
+	switch(event->keyval)
 	{
-		printf("ESC pressed!\n");
-		die();
+		case GDK_KEY_Escape:
+			#if DEBUG
+				printf("ESC pressed!\n");
+			#endif
+			die();
+		case GDK_KEY_Tab:
+			#if DEBUG
+				printf("Tab pressed. Found %d matches\n", numMatches);
+			#endif
+			
+			// has the entry changed since hitting tab?
+			if (g_strcmp0(old_entry, entry) == 0)
+			{
+				gchar* match; 
+				#if DEBUG
+					printf("Entry has not changed!\n");
+				#endif
+
+				if (current_match_index < numMatches)
+				{
+					match = g_list_nth(matches, current_match_index++)->data;
+
+					gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), match);				
+					gtk_entry_set_position(GTK_ENTRY(GTK_COMBO(combo)->entry), strlen(match));
+				}
+				else // at the end, wrap around
+				{	
+					current_match_index = 0;
+				}
+				
+			}
+
+			break;
+		default:
+			#if DEBUG
+				printf("Checking matches for \"%s\"...\n", entry);
+			#endif
+			matches = get_path_matches(entry, g_strdup(path));
+			break;
 	}
+
+	old_entry = g_strdup(entry);
+
 	return FALSE;
 }
 
-// puts the shortest match in the PATH in text entry box if tab is pressed
-static void check_tab(GtkComboBox *combo, GdkEventKey *event, gpointer data)
-{
-	if (event->keyval == GDK_KEY_Tab) 
-	{
-		printf("TAB pressed!\n");
-
-		// get text from box
-		const gchar* entry_box = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
-		g_printf("entry: %s\n", entry_box);
-		
-		// pull the PATH
-		const gchar* path = (gchar*) getenv("PATH");
-		g_printf("path: %s\n", path);
-
-		// see what the shortest PATH match is
-		gchar* match = get_path_match(entry_box, g_strdup(path)); // send a copy of path since it gets mangeld
-		
-		if (!match)
-		{
-			printf("no match.\n");
-			return;
-		}
-
-		if (match)
-		{
-			// print the match
-			g_print("%s\n", match);
-		
-			// set the match in the textbox
-			gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), match);
-
-			// move cursor to end
-			gtk_entry_set_position(GTK_ENTRY(GTK_COMBO(combo)->entry), (gint) strlen((char*) match));
-			g_free(match);
-		}
-	}
-}
 // returns 0 or 1 if a line is in a file
 static int in_file(char* filename, char* s, int must_exist)
 {
@@ -137,8 +150,8 @@ int main(void)
 
 	gtk_init(NULL, NULL);
 	
-	GtkWidget* window = gtk_window_new(GTK_WINDOW_TOPLEVEL); // main window
-	GtkWidget* combo = gtk_combo_new(); // editable box with dropdown menu
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL); // main window
+	combo = gtk_combo_new(); // editable box with dropdown menu
 		
 	GList* histLines = NULL;
 	char line[356];
@@ -196,13 +209,10 @@ int main(void)
 	// listen for X button
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(die), NULL); 
 	
-	// listen for esc
-	g_signal_connect(window, "key_press_event", G_CALLBACK(check_escape), NULL); 
-
-	// listen for tab
-	g_signal_connect(combo, "key_press_event", G_CALLBACK(check_tab), NULL); 
+	// listen for key up events - if listening for keydowm, the entry is incomplete
+	g_signal_connect(window, "key_release_event", G_CALLBACK(check_keys), NULL); 
 	
-	// listen for dropdown changes
+	// listen for enter
 	g_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", G_CALLBACK(gtk_main_quit), NULL); 
 
 	gtk_widget_show_all(window);
@@ -234,7 +244,7 @@ int main(void)
 			printf("already_present: %d\n", already_present);
 			printf("not_found: %d\n", not_found);
 		#endif
-
+		
 		if (result == 0 && !already_present && !not_found)
 		{
 			FILE* logFp = fopen(histFile, "a");
