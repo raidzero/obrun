@@ -23,6 +23,7 @@ GtkWidget* combo; // the entry area
 GList* matches; // possible auto complete matches
 gchar* old_entry = ""; // what was entered before
 int current_match_index = 0; // the match index we are currently on
+char* sort_mode; // how we will sort the autocomplete
 
 // quits the program after destroying any given widgets
 void die()
@@ -82,7 +83,6 @@ static gboolean check_keys(GtkWidget *widget, GdkEventKey *event, gpointer data)
 	}
 
 	old_entry = g_strdup(entry);
-
 	return FALSE;
 }
 
@@ -137,7 +137,7 @@ static int in_file(char* filename, char* s, int must_exist)
 	return (present == 0);
 }
 
-int main(void) 
+int main(int argc, char* argv[]) 
 {
 	// wipe away any previous err file
 	unlink("/tmp/err");
@@ -198,6 +198,16 @@ int main(void)
 	// we're done with this file for now
 	fclose(logFp);
 	
+	// how do we want to sort?
+	sort_mode = "size";
+	if (argc > 1)
+	{
+		if (strcmp(argv[1], "-a") == 0)
+		{
+			sort_mode = "alpha";
+		}
+	}
+
 	gtk_window_set_title(GTK_WINDOW(window), "Run...");
 
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);

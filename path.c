@@ -13,6 +13,8 @@
 
 #define DEBUG 0
 
+extern char* sort_mode;
+
 GList* get_path_matches(const gchar* cmd, const gchar* path)
 {
 	#if DEBUG
@@ -92,8 +94,15 @@ GList* get_path_matches(const gchar* cmd, const gchar* path)
 
 							// add to glist
 							gchar* match = g_strdup(ent->d_name);
-							matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar);
-						}
+							if (strcmp(sort_mode, "alpha") == 0)
+							{
+								matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar_alpha);
+							}
+							else
+							{
+								matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar_size);
+							}
+						}	
 					}
 				}
 				#if DEBUG == 2
@@ -137,10 +146,17 @@ void free_string_array(char** array, int size)
 }
 
 // used for glist sorting - by length
-gint compar (gpointer a, gpointer b)
+gint compar_size (gpointer a, gpointer b)
 {
 	return (strlen((char*)a) > strlen((char*)b));
 }
+
+// used for glist sorting - by alpha
+gint compar_alpha (gpointer a, gpointer b)
+{
+	return (strcmp((char*) a, (char*) b));
+}
+
 // returns 0 or 1 if string starts with another
 int str_startswith(char* s, const char* st)
 {
