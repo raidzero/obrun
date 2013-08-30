@@ -118,7 +118,7 @@ gchar* get_path_match(const gchar* cmd, const gchar* path)
 	else
 	{
 		// return the shortest match
-		return matches->data;
+		return g_list_first(matches)->data;
 	}
 }
 
@@ -133,10 +133,11 @@ void free_string_array(char** array, int size)
 	// now free the main thing
 	free(array);
 }
-// used for glist sorting
+
+// used for glist sorting - by length
 gint compar (gpointer a, gpointer b)
 {
-	return strcmp( (char*)a, (char*)b );
+	return (strlen((char*)a) > strlen((char*)b));
 }
 // returns 0 or 1 if string starts with another
 int str_startswith(char* s, const char* st)

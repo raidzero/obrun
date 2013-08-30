@@ -22,8 +22,8 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer dat
 {
 	if (event->keyval == GDK_KEY_Escape) 
 	{
-		gtk_main_quit();
 		printf("ESC pressed!\n");
+		gtk_main_quit();
 		return TRUE;
 	}
 	return FALSE;
@@ -177,6 +177,7 @@ int main(void)
 	fclose(logFp);
 	
 	gtk_window_set_title(GTK_WINDOW(window), "Run...");
+
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_container_add(GTK_CONTAINER(window), combo);
 
@@ -206,6 +207,7 @@ int main(void)
 	{
 		return 0;
 	}
+	
 	
 	
 	g_printf("Executing %s...\n", exec_str);
@@ -244,5 +246,6 @@ int main(void)
 		g_free(orig_str);
 		g_free(exec_str);
 	}
+	gtk_main_quit();
 	return 0;
 }
