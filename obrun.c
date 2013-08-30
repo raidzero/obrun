@@ -17,14 +17,20 @@
 
 #define DEBUG 0
 
+// quits the program after destroying any given widgets
+void die()
+{
+	gtk_main_quit();	
+	exit(0);
+}
+
 // returns true if esc is pressed
 static gboolean check_escape(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
 	if (event->keyval == GDK_KEY_Escape) 
 	{
 		printf("ESC pressed!\n");
-		gtk_main_quit();
-		return TRUE;
+		die();
 	}
 	return FALSE;
 }
@@ -162,6 +168,7 @@ int main(void)
 				printf("%d histLines found\n", lc);
 			#endif
 			gtk_combo_set_popdown_strings(GTK_COMBO(combo), histLines);
+			g_list_free(histLines);
 		}
 	}
 	else
@@ -172,6 +179,8 @@ int main(void)
 		#endif
 		logFp = fopen(histFile, "w");
 	}
+	
+	g_free(newLine);
 
 	// we're done with this file for now
 	fclose(logFp);
@@ -185,7 +194,7 @@ int main(void)
 	gtk_widget_set_size_request(GTK_COMBO(combo)->entry, 200, 20);
 	
 	// listen for X button
-	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL); 
+	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(die), NULL); 
 	
 	// listen for esc
 	g_signal_connect(window, "key_press_event", G_CALLBACK(check_escape), NULL); 
@@ -205,10 +214,8 @@ int main(void)
 	
 	if (strcmp(orig_str, "(null)") == 0 || strcmp(orig_str, "") == 0) // user didnt enter anything
 	{
-		return 0;
+		die();
 	}
-	
-	
 	
 	g_printf("Executing %s...\n", exec_str);
 
@@ -242,10 +249,11 @@ int main(void)
 			fprintf(logFp, "%s\n", orig_str);
 			fclose(logFp);		
 		}
-		
-		g_free(orig_str);
-		g_free(exec_str);
 	}
-	gtk_main_quit();
+	
+	g_free(orig_str);
+	g_free(exec_str);	
+
+	die();
 	return 0;
 }
