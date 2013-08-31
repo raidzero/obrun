@@ -20,6 +20,7 @@
 // globals
 GtkWidget* window; // the main window
 GtkWidget* combo; // the entry area
+GtkWidget* err_dialog; // error dialog
 GList* matches; // possible auto complete matches
 gchar* old_entry = ""; // what was entered before
 int current_match_index = 0; // the match index we are currently on
@@ -35,7 +36,7 @@ void die()
 // displays an error message box
 void display_error_dialog(const gchar* error_str)
 {
-	GtkWidget* err_dialog = gtk_message_dialog_new(GTK_WINDOW(window), 
+	err_dialog = gtk_message_dialog_new(GTK_WINDOW(window), 
 		GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_MESSAGE_ERROR,
 		GTK_BUTTONS_CLOSE,		
@@ -59,11 +60,17 @@ static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer d
 			#endif
 			die();		
 		case GDK_KEY_Tab:
-
+			
 			#if DEBUG
 				printf("Tab pressed. Found %d matches\n", numMatches);
 			#endif
-	
+			
+			// if there were no matches just delete the entry text
+			if (numMatches == 0)
+			{
+				gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), "");
+				break;
+			}
 			// has the entry changed since hitting tab?
 			if (g_strcmp0(old_entry, entry) == 0)
 			{
@@ -83,10 +90,17 @@ static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer d
 				{	
 					current_match_index = 0;
 				}
-			}	
+			}
+			else // just update to the first match
+			{
+				gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), matches->data);		
+				gtk_entry_set_position(GTK_ENTRY(GTK_COMBO(combo)->entry), strlen(matches->data));
+			}
+			break;
 
 	}
 	old_entry = g_strdup(entry);
+
 	return FALSE;
 }
 
@@ -101,6 +115,9 @@ static gboolean check_key_up(GtkWidget *widget, GdkEventKey *event, gpointer dat
 		case GDK_KEY_Escape:
 			break; // do nothing
 		case GDK_KEY_Tab:
+			#if DEBUG
+				printf("TAB UP\n");
+			#endif
 			break; // nothing
 		default: // other keys
 			#if DEBUG
@@ -109,6 +126,7 @@ static gboolean check_key_up(GtkWidget *widget, GdkEventKey *event, gpointer dat
 			matches = get_path_matches(entry, g_strdup(path));
 			break;
 	}
+
 	return FALSE;
 }
 
@@ -174,6 +192,7 @@ int main(int argc, char* argv[])
 	// open history file
 	FILE* logFp = fopen(histFile, "r");
 
+
 	gtk_init(NULL, NULL);
 	
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL); // main window
@@ -234,6 +253,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
+
 	gtk_window_set_title(GTK_WINDOW(window), "Run...");
 
 	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
@@ -241,6 +261,8 @@ int main(int argc, char* argv[])
 
 	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 	gtk_widget_set_size_request(GTK_COMBO(combo)->entry, 200, 20);
+
+	gtk_combo_disable_activate(GTK_COMBO(combo)); // don't show dropdown when enter
 	
 	// listen for X button
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(die), NULL); 
@@ -252,7 +274,8 @@ int main(int argc, char* argv[])
 	g_signal_connect(window, "key_press_event", G_CALLBACK(check_key_down), NULL);
 	// listen for enter
 	g_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", G_CALLBACK(gtk_main_quit), NULL); 
-
+	
+	G_START: 
 	gtk_widget_show_all(window);
 	gtk_main();
 
@@ -283,12 +306,16 @@ int main(int argc, char* argv[])
 			printf("not_found: %d\n", not_found);
 		#endif
 		
-		/*
+		
 		if (not_found)
 		{
-			display_error_dialog("Command not found.");
+			display_error_dialog("Command not found!");
+			
+			// wipe out the entry field 
+			gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), "");
+			goto G_START; // don't exit, move back up to where widgets are shown
 		}
-		*/
+		
 		if (result == 0 && !already_present && !not_found)
 		{
 			FILE* logFp = fopen(histFile, "a");
