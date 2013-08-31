@@ -13,6 +13,7 @@
 
 #include <unistd.h>
 
+#include "obrun.h"
 #include "path.h"
 
 #define DEBUG 0
