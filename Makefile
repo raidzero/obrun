@@ -8,10 +8,12 @@ SRC_FILES := \
 OUT=$(NAME)
 PREFIX=/usr/bin
 
-DEBUG=0
-
 all:
-	$(CC) $(CFLAGS) -DDEBUG=$(DEBUG) $(SRC_FILES) -o $(OUT) $(LIBS)
+	$(CC) $(CFLAGS) -DDEBUG=0 $(SRC_FILES) -o $(OUT) $(LIBS)
+	strip ./$(OUT)
+
+debug:
+	$(CC) $(CFLAGS) -DDEBUG=1 $(SRC_FILES) -o $(OUT) $(LIBS)
 	strip ./$(OUT)
 
 install: all
