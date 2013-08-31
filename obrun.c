@@ -309,10 +309,15 @@ int main(int argc, char* argv[])
 		
 		if (not_found)
 		{
-			display_error_dialog("Command not found!");
-			
+			char* err_msg = malloc((strlen(orig_str) + strlen(": Command not found!") + 1) * sizeof(char));
+			sprintf(err_msg, "%s: Command not found!", orig_str);
+
+			display_error_dialog(err_msg);
+		
 			// wipe out the entry field 
 			gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), "");
+			
+			free(err_msg);
 			goto G_START; // don't exit, move back up to where widgets are shown
 		}
 		
