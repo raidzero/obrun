@@ -32,25 +32,38 @@ void die()
 	exit(0);
 }
 
-// performs actions for escape (quit), or any other key look up possible matches
-static gboolean check_keys(GtkWidget *widget, GdkEventKey *event, gpointer data)
+// displays an error message box
+void display_error_dialog(const gchar* error_str)
+{
+	GtkWidget* err_dialog = gtk_message_dialog_new(GTK_WINDOW(window), 
+		GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+		GTK_BUTTONS_CLOSE,		
+		"%s", error_str);
+
+	gtk_dialog_run(GTK_DIALOG(err_dialog));
+	gtk_widget_destroy(err_dialog);
+}
+
+// performs actions for key down events (esc, tab)
+static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer data)
 {
 	const gchar* entry = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
-	const gchar* path = (gchar*) getenv("PATH");
 	int numMatches = g_list_length(matches);
 	
-	switch(event->keyval)
+	switch (event->keyval)
 	{
 		case GDK_KEY_Escape:
 			#if DEBUG
 				printf("ESC pressed!\n");
 			#endif
-			die();
+			die();		
 		case GDK_KEY_Tab:
+
 			#if DEBUG
 				printf("Tab pressed. Found %d matches\n", numMatches);
 			#endif
-			
+	
 			// has the entry changed since hitting tab?
 			if (g_strcmp0(old_entry, entry) == 0)
 			{
@@ -70,19 +83,32 @@ static gboolean check_keys(GtkWidget *widget, GdkEventKey *event, gpointer data)
 				{	
 					current_match_index = 0;
 				}
-				
-			}
+			}	
 
-			break;
-		default:
+	}
+	old_entry = g_strdup(entry);
+	return FALSE;
+}
+
+// performs actions for key up events (any key other than esc, tab)
+static gboolean check_key_up(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+	const gchar* entry = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
+	const gchar* path = (gchar*) getenv("PATH");
+	
+	switch(event->keyval)
+	{
+		case GDK_KEY_Escape:
+			break; // do nothing
+		case GDK_KEY_Tab:
+			break; // nothing
+		default: // other keys
 			#if DEBUG
 				printf("Checking matches for \"%s\"...\n", entry);
 			#endif
 			matches = get_path_matches(entry, g_strdup(path));
 			break;
 	}
-
-	old_entry = g_strdup(entry);
 	return FALSE;
 }
 
@@ -219,9 +245,11 @@ int main(int argc, char* argv[])
 	// listen for X button
 	g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(die), NULL); 
 	
-	// listen for key up events - if listening for keydowm, the entry is incomplete
-	g_signal_connect(window, "key_release_event", G_CALLBACK(check_keys), NULL); 
-	
+	// listen for key up events: for typing
+	g_signal_connect(window, "key_release_event", G_CALLBACK(check_key_up), NULL); 
+
+	// listen for key down events: for autocomplete, esc
+	g_signal_connect(window, "key_press_event", G_CALLBACK(check_key_down), NULL);
 	// listen for enter
 	g_signal_connect(GTK_OBJECT(GTK_COMBO(combo)->entry), "activate", G_CALLBACK(gtk_main_quit), NULL); 
 
@@ -255,6 +283,10 @@ int main(int argc, char* argv[])
 			printf("not_found: %d\n", not_found);
 		#endif
 		
+		if (not_found)
+		{
+			display_error_dialog("Command not found.");
+		}
 		if (result == 0 && !already_present && !not_found)
 		{
 			FILE* logFp = fopen(histFile, "a");

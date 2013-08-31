@@ -128,7 +128,7 @@ GList* get_path_matches(const gchar* cmd, const gchar* path)
 	else
 	{
 		// return the list, let the caller figure out what to do with it
-		printf("Returning %d matches for %s.\n", numMatches, cmd);
+		printf("Returning %d matches for \"%s\".\n", numMatches, cmd);
 		return matches;
 	}
 }
