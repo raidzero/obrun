@@ -15,7 +15,7 @@
 
 #include "path.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 // globals
 GtkWidget* window; // the main window
@@ -73,6 +73,7 @@ static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer d
 				gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), "");
 				break;
 			}
+			
 			match = matches->data;
 
 			// has the entry changed since hitting tab?
