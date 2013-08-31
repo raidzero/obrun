@@ -283,10 +283,12 @@ int main(int argc, char* argv[])
 			printf("not_found: %d\n", not_found);
 		#endif
 		
+		/*
 		if (not_found)
 		{
 			display_error_dialog("Command not found.");
 		}
+		*/
 		if (result == 0 && !already_present && !not_found)
 		{
 			FILE* logFp = fopen(histFile, "a");
