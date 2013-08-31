@@ -90,15 +90,18 @@ GList* get_path_matches(const gchar* cmd, const gchar* path)
 						{
 							//printf("%s ", ent->d_name);
 
-							// add to glist
+							// add to glist - assuming its not already here
 							gchar* match = g_strdup(ent->d_name);
-							if (strcmp(sort_mode, "alpha") == 0)
+							if (!g_list_find(matches, match))
 							{
-								matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar_alpha);
-							}
-							else
-							{
-								matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar_size);
+								if (strcmp(sort_mode, "alpha") == 0)
+								{
+									matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar_alpha);
+								}
+								else
+								{
+									matches = g_list_insert_sorted(matches, match, (GCompareFunc) compar_size);
+								}
 							}
 						}	
 					}
