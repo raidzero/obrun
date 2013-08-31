@@ -133,18 +133,6 @@ GList* get_path_matches(const gchar* cmd, const gchar* path)
 	}
 }
 
-// will free a char**
-void free_string_array(char** array, int size)
-{
-	int i;
-	for(i=0; i<size; i++)
-	{
-		free(array[i]);
-	}
-	// now free the main thing
-	free(array);
-}
-
 // used for glist sorting - by length
 gint compar_size (gpointer a, gpointer b)
 {

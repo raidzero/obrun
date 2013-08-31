@@ -6,4 +6,3 @@ int str_startswith(char*, const char*);
 int in_array(char**, char*, int);
 gint compar_size (gpointer, gpointer);
 gint compar_alpha (gpointer, gpointer);
-void free_string_array(char**, int);

@@ -15,7 +15,7 @@
 
 #include "path.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 // globals
 GtkWidget* window; // the main window
@@ -50,8 +50,10 @@ void display_error_dialog(const gchar* error_str)
 static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer data)
 {
 	const gchar* entry = gtk_entry_get_text(GTK_ENTRY(GTK_COMBO(combo)->entry));
-	int numMatches = g_list_length(matches);
 	
+	int numMatches = g_list_length(matches);
+	gchar* match;
+
 	switch (event->keyval)
 	{
 		case GDK_KEY_Escape:
@@ -62,7 +64,7 @@ static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer d
 		case GDK_KEY_Tab:
 			
 			#if DEBUG
-				printf("Tab pressed. Found %d matches\n", numMatches);
+				printf("Tab DOWN. Found %d matches\n", numMatches);
 			#endif
 			
 			// if there were no matches just delete the entry text
@@ -71,36 +73,34 @@ static gboolean check_key_down(GtkWidget* wisget, GdkEventKey *event, gpointer d
 				gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), "");
 				break;
 			}
+			match = matches->data;
+
 			// has the entry changed since hitting tab?
 			if (g_strcmp0(old_entry, entry) == 0)
 			{
-				gchar* match; 
 				#if DEBUG
-					printf("Entry has not changed!\n");
+					printf("Entry has not changed! ");
+					printf("%d < %d? %d\n", current_match_index, numMatches-1, (current_match_index < numMatches-1));
 				#endif
 
-				if (current_match_index < numMatches)
+				if (current_match_index < numMatches-1)
 				{
-					match = g_list_nth(matches, current_match_index++)->data;
-
-					gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), match);				
-					gtk_entry_set_position(GTK_ENTRY(GTK_COMBO(combo)->entry), strlen(match));
+					match = g_list_nth(matches, ++current_match_index)->data;
 				}
 				else // at the end, wrap around
 				{	
 					current_match_index = 0;
+					match = g_list_nth(matches, current_match_index)->data;
 				}
 			}
-			else // just update to the first match
-			{
-				gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), matches->data);		
-				gtk_entry_set_position(GTK_ENTRY(GTK_COMBO(combo)->entry), strlen(matches->data));
-			}
+			
+			// whatever has been found, set it in the entry box
+			gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(combo)->entry), match);		
+			gtk_entry_set_position(GTK_ENTRY(GTK_COMBO(combo)->entry), strlen(match));
 			break;
-
 	}
+	
 	old_entry = g_strdup(entry);
-
 	return FALSE;
 }
 
@@ -339,6 +339,7 @@ int main(int argc, char* argv[])
 	
 	g_free(orig_str);
 	g_free(exec_str);	
+	g_list_free(matches);
 
 	die();
 	return 0;
