@@ -8,10 +8,10 @@ SRC_FILES := \
 OUT=$(NAME)
 PREFIX=/usr/bin
 
-#LIBS=`pkg-config gtk+-2.0 glib-2.0 --libs`
+DEBUG=0
 
 all:
-	$(CC) $(CFLAGS) $(SRC_FILES) -o $(OUT) $(LIBS)
+	$(CC) $(CFLAGS) -DDEBUG=$(DEBUG) $(SRC_FILES) -o $(OUT) $(LIBS)
 	strip ./$(OUT)
 
 install: all

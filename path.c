@@ -11,8 +11,6 @@
 
 #include "path.h"
 
-#define DEBUG 0
-
 extern char* sort_mode;
 
 GList* get_path_matches(const gchar* cmd, const gchar* path)

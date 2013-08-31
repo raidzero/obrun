@@ -16,8 +16,6 @@
 #include "obrun.h"
 #include "path.h"
 
-#define DEBUG 0
-
 // globals
 GtkWidget* window; // the main window
 GtkWidget* combo; // the entry area
