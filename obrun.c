@@ -27,6 +27,8 @@ char* sort_mode; // how we will sort the autocomplete
 
 int main(int argc, char* argv[]) 
 {
+	int persistent = 0; 
+
 	// wipe away any previous err file
 	unlink("/tmp/err");
 	
@@ -91,10 +93,19 @@ int main(int argc, char* argv[])
 	sort_mode = "size";
 	if (argc > 1)
 	{
-		if (strcmp(argv[1], "-a") == 0)
+		int ai;
+		for (ai=0; ai<argc; ai++)
 		{
-			sort_mode = "alpha";
-		}
+
+			if (strcmp(argv[ai], "-a") == 0)
+			{
+				sort_mode = "alpha";
+			}
+			if (strcmp(argv[ai], "-p") == 0)
+			{
+				persistent = 1;
+			}			
+		}	
 	}
 
 
@@ -181,6 +192,14 @@ int main(int argc, char* argv[])
 		}
 	}
 	
+	#if DEBUG
+		printf("persistent: %d\n", persistent);
+	#endif
+
+	if (persistent == 1)
+	{
+		goto G_START;
+	}
 	g_free(orig_str);
 	g_free(exec_str);	
 	g_list_free(matches);
